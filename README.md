@@ -41,6 +41,8 @@ which python > "$HOME/Library/Application Support/DTA Parquet Quick Look/python-
 
 ```bash
 ./build.sh
+pluginkit -r "/Applications/DTA Parquet Quick Look.app/Contents/PlugIns/DTA Parquet Preview.appex" 2>/dev/null || true
+rm -rf "/Applications/DTA Parquet Quick Look.app"
 ditto "build/DTA Parquet Quick Look.app" "/Applications/DTA Parquet Quick Look.app"
 /System/Library/Frameworks/CoreServices.framework/Frameworks/LaunchServices.framework/Support/lsregister \
   -f "/Applications/DTA Parquet Quick Look.app"
@@ -113,6 +115,8 @@ Python executable.
 
 ```bash
 ./build.sh
+pluginkit -r "/Applications/DTA Parquet Quick Look.app/Contents/PlugIns/DTA Parquet Preview.appex" 2>/dev/null || true
+rm -rf "/Applications/DTA Parquet Quick Look.app"
 ditto "build/DTA Parquet Quick Look.app" "/Applications/DTA Parquet Quick Look.app"
 /System/Library/Frameworks/CoreServices.framework/Frameworks/LaunchServices.framework/Support/lsregister \
   -f "/Applications/DTA Parquet Quick Look.app"
