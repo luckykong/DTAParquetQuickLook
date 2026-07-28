@@ -19,6 +19,22 @@ Apache Parquet `.parquet` 文件并按空格，即可用对齐的表格快速查
   不会读取完整数据文件。
 - 使用纯 HTML/CSS 表格，不执行页面 JavaScript。
 
+### v0.1 发布说明
+
+`v0.1` 是第一个公开测试版本。GitHub Release 中提供的预编译应用具有以下限制：
+
+- 仅包含 `arm64` 二进制，只支持 Apple Silicon Mac。
+- 使用 ad-hoc 签名，未使用 Apple Developer ID 签名，也未经过 Apple 公证。
+- macOS Gatekeeper 可能阻止从网络下载的应用。推荐优先按照下文说明从源码构建。
+- 如果你已核对 Release 中的 SHA-256 校验值并信任该文件，可以在安装后执行：
+
+```bash
+xattr -dr com.apple.quarantine "/Applications/DTA Parquet Quick Look.app"
+```
+
+- 预编译应用不内置 Python、pandas 或 PyArrow，仍需按照“系统与依赖”配置
+  本地 Python 环境。
+
 ### 系统与依赖
 
 - macOS 12 或更高版本。
@@ -74,6 +90,13 @@ qlmanage -r cache
 依赖。恶意构造的文件或包含极多变量的文件仍可能导致依赖解析错误或较高的内存
 占用。不要用不受信任的管理员权限运行本项目。
 
+### AI 构建声明
+
+本项目的大部分代码、界面样式、构建脚本和文档由人工提出需求并在 AI 辅助下
+生成、修改和调试。项目维护者对功能方向作出决定，并在本地完成了 DTA、Parquet、
+大文件边界、Quick Look 交互、隐私字符串和签名检查。AI 辅助并不等同于独立的
+安全审计；在生产环境或安全敏感场景使用前，请自行审查源码和依赖。
+
 ## English
 
 A lightweight macOS Quick Look extension for Stata `.dta` and Apache Parquet
@@ -91,6 +114,26 @@ structure in an aligned table.
 - For larger datasets, reads at most the first 500 rows and offers a
   `First 50 / First 500` switch instead of loading the complete file.
 - Uses a real HTML/CSS table and does not execute page JavaScript.
+
+### v0.1 release notes
+
+`v0.1` is the first public test release. The prebuilt app attached to the
+GitHub Release has the following limitations:
+
+- It contains `arm64` binaries only and supports Apple Silicon Macs only.
+- It is ad-hoc signed, not signed with an Apple Developer ID, and not notarized
+  by Apple.
+- macOS Gatekeeper may block an app downloaded from the internet. Building from
+  source using the instructions below is recommended.
+- After verifying the SHA-256 checksum published with the Release, trusted
+  users may remove the quarantine attribute after installation:
+
+```bash
+xattr -dr com.apple.quarantine "/Applications/DTA Parquet Quick Look.app"
+```
+
+- The prebuilt app does not bundle Python, pandas, or PyArrow. A local Python
+  environment must still be configured as described under Requirements.
 
 ### Requirements
 
@@ -153,6 +196,16 @@ pandas and PyArrow; keep them updated. A maliciously crafted file or a dataset
 with an extreme number of variables may still trigger parser errors or high
 memory usage. Do not run the project with administrator privileges on
 untrusted files.
+
+### AI development disclosure
+
+Most of the code, interface styling, build scripts, and documentation in this
+project were generated, revised, and debugged with AI assistance from
+human-provided requirements. The project maintainer made the product decisions
+and performed local checks covering DTA and Parquet files, large-file bounds,
+Quick Look interactions, privacy strings, and code signatures. AI assistance
+is not an independent security audit. Review the source and dependencies before
+using the project in production or security-sensitive environments.
 
 ## License
 
