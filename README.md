@@ -64,10 +64,15 @@ ditto "build/DTA Parquet Quick Look.app" "/Applications/DTA Parquet Quick Look.a
   -f "/Applications/DTA Parquet Quick Look.app"
 pluginkit -a "/Applications/DTA Parquet Quick Look.app/Contents/PlugIns/DTA Parquet Preview.appex"
 qlmanage -r cache
+qlmanage -r
 ```
 
 如果 Finder 尚未启用扩展，请在“系统设置 → 通用 → 登录项与扩展 → Quick Look”
 中启用 DTA Parquet Preview。重新安装后，关闭并重新打开已有的 Quick Look 窗口。
+
+`qlmanage -r cache` 清除预览缓存，`qlmanage -r` 重启 Quick Look 守护进程。
+如果扩展显示为已启用、但按空格仍看不到数据，通常是注册记录陈旧或系统缓存了
+旧的失败结果，重新执行上面这组命令即可恢复。
 
 ### 卸载
 
@@ -75,6 +80,7 @@ qlmanage -r cache
 pluginkit -r "/Applications/DTA Parquet Quick Look.app/Contents/PlugIns/DTA Parquet Preview.appex"
 rm -rf "/Applications/DTA Parquet Quick Look.app"
 qlmanage -r cache
+qlmanage -r
 ```
 
 ### 隐私与安全
@@ -165,11 +171,17 @@ ditto "build/DTA Parquet Quick Look.app" "/Applications/DTA Parquet Quick Look.a
   -f "/Applications/DTA Parquet Quick Look.app"
 pluginkit -a "/Applications/DTA Parquet Quick Look.app/Contents/PlugIns/DTA Parquet Preview.appex"
 qlmanage -r cache
+qlmanage -r
 ```
 
 If Finder has not enabled the extension, enable DTA Parquet Preview in
 System Settings → General → Login Items & Extensions → Quick Look. Close and
 reopen any existing Quick Look window after reinstalling.
+
+`qlmanage -r cache` clears the preview cache and `qlmanage -r` restarts the
+Quick Look daemon. If the extension shows as enabled but pressing Space still
+shows no data, the registration record is usually stale or a previous failure
+is cached; rerunning the commands above restores it.
 
 ### Uninstall
 
@@ -177,6 +189,7 @@ reopen any existing Quick Look window after reinstalling.
 pluginkit -r "/Applications/DTA Parquet Quick Look.app/Contents/PlugIns/DTA Parquet Preview.appex"
 rm -rf "/Applications/DTA Parquet Quick Look.app"
 qlmanage -r cache
+qlmanage -r
 ```
 
 ### Privacy and security
