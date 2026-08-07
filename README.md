@@ -32,16 +32,43 @@ Apache Parquet `.parquet` 文件并按空格，即可用对齐的表格快速查
 xattr -dr com.apple.quarantine "/Applications/DTA Parquet Quick Look.app"
 ```
 
-- 预编译应用不内置 Python、pandas 或 PyArrow，仍需按照“系统与依赖”配置
-  本地 Python 环境。
+- 预编译应用不内置 Python、pandas 或 PyArrow，仍需按照下文“安装”第 1 步
+  配置本地 Python 环境。
 
 ### 系统与依赖
 
 - macOS 12 或更高版本。
-- Apple Command Line Tools：`xcode-select --install`。不需要安装完整 Xcode。
-- Python 3，以及 `pandas`、`pyarrow`。
+- Python 3，以及 `pandas`、`pyarrow`（配置方法见下文“安装”第 1 步）。
+- 仅从源码构建时需要 Apple Command Line Tools：`xcode-select --install`。
+  不需要安装完整 Xcode。
 
-推荐使用独立环境：
+### 构建
+
+以下两种方式获取应用，任选其一。
+
+**方式一：下载发布版本**
+
+从 [GitHub Releases](https://github.com/luckykong/DTAParquetQuickLook/releases)
+下载预编译的 `DTA Parquet Quick Look.app`（限制见上文“v0.1 发布说明”，
+包括 Gatekeeper 与 quarantine 的处理）。无需构建，直接进入下文“安装”。
+
+**方式二：从源码构建**
+
+```bash
+./build.sh
+```
+
+构建产物位于 `build/DTA Parquet Quick Look.app`。
+
+### 安装
+
+#### 第 1 步（必须）：配置 Python 环境
+
+> **重要：应用不内置 Python、pandas 或 PyArrow。** 跳过本步骤直接打开预览，
+> 只会看到类似 `DATA PREVIEW ERROR: ModuleNotFoundError: No module named
+> 'pyarrow'` 的错误，看不到数据。请务必配置一个自定义 Python 环境，环境中
+> 必须预先安装 `pandas` 和 `pyarrow` 两个模块，并把解释器路径写入
+> `python-path` 配置文件。
 
 ```bash
 conda create -n dta-parquet-quicklook python pandas pyarrow
@@ -50,13 +77,15 @@ mkdir -p "$HOME/Library/Application Support/DTA Parquet Quick Look"
 which python > "$HOME/Library/Application Support/DTA Parquet Quick Look/python-path"
 ```
 
-程序也会自动检查常见的 Homebrew、Conda 和系统 Python 路径。配置文件优先级
-更高，文件内容应为 Python 可执行文件的绝对路径。
+不使用 conda 时，也可以用其它 Python（例如 Homebrew 的 python3）安装
+`pandas` 和 `pyarrow`，再把该解释器的绝对路径写入上面的 `python-path`
+文件。程序虽然会自动检查常见的 Homebrew、Conda 和系统 Python 路径，但这些
+解释器通常没有安装依赖，请不要依赖自动检测。`python-path` 配置文件优先级
+最高，文件内容应为 Python 可执行文件的绝对路径。
 
-### 构建与安装
+#### 第 2 步：安装应用并注册扩展
 
 ```bash
-./build.sh
 pluginkit -r "/Applications/DTA Parquet Quick Look.app/Contents/PlugIns/DTA Parquet Preview.appex" 2>/dev/null || true
 rm -rf "/Applications/DTA Parquet Quick Look.app"
 ditto "build/DTA Parquet Quick Look.app" "/Applications/DTA Parquet Quick Look.app"
@@ -66,6 +95,11 @@ pluginkit -a "/Applications/DTA Parquet Quick Look.app/Contents/PlugIns/DTA Parq
 qlmanage -r cache
 qlmanage -r
 ```
+
+使用下载的发布版本时，把 `ditto` 命令中的源路径
+`build/DTA Parquet Quick Look.app` 替换为解压后应用的实际路径，其余命令不变。
+
+#### 第 3 步：启用扩展
 
 如果 Finder 尚未启用扩展，请在“系统设置 → 通用 → 登录项与扩展 → Quick Look”
 中启用 DTA Parquet Preview。重新安装后，关闭并重新打开已有的 Quick Look 窗口。
@@ -139,15 +173,44 @@ xattr -dr com.apple.quarantine "/Applications/DTA Parquet Quick Look.app"
 ```
 
 - The prebuilt app does not bundle Python, pandas, or PyArrow. A local Python
-  environment must still be configured as described under Requirements.
+  environment must still be configured as described in Step 1 of Install below.
 
 ### Requirements
 
 - macOS 12 or later.
-- Apple Command Line Tools: `xcode-select --install`. Full Xcode is not required.
-- Python 3 with `pandas` and `pyarrow`.
+- Python 3 with `pandas` and `pyarrow` (configured in Step 1 of Install below).
+- Apple Command Line Tools (`xcode-select --install`) — only needed when
+  building from source. Full Xcode is not required.
 
-A dedicated environment is recommended:
+### Build
+
+Get the app in either of two ways.
+
+**Option 1: download a release**
+
+Download the prebuilt `DTA Parquet Quick Look.app` from
+[GitHub Releases](https://github.com/luckykong/DTAParquetQuickLook/releases)
+(see the v0.1 release notes above for its limitations, including Gatekeeper
+and quarantine handling). No build step is needed; continue with Install below.
+
+**Option 2: build from source**
+
+```bash
+./build.sh
+```
+
+The built app is placed at `build/DTA Parquet Quick Look.app`.
+
+### Install
+
+#### Step 1 (required): configure the Python environment
+
+> **Important: the app does not bundle Python, pandas, or PyArrow.** If you
+> skip this step, pressing Space will only show an error such as
+> `DATA PREVIEW ERROR: ModuleNotFoundError: No module named 'pyarrow'`
+> instead of your data. You must set up a dedicated Python environment with
+> the `pandas` and `pyarrow` modules preinstalled, and write the interpreter
+> path to the `python-path` configuration file.
 
 ```bash
 conda create -n dta-parquet-quicklook python pandas pyarrow
@@ -156,14 +219,17 @@ mkdir -p "$HOME/Library/Application Support/DTA Parquet Quick Look"
 which python > "$HOME/Library/Application Support/DTA Parquet Quick Look/python-path"
 ```
 
-The app also checks common Homebrew, Conda, and system Python locations. The
-configuration file takes precedence and must contain the absolute path to the
-Python executable.
+Without conda, any other Python (for example Homebrew's python3) also works
+as long as `pandas` and `pyarrow` are installed in it; write that
+interpreter's absolute path into the `python-path` file above. The app does
+probe common Homebrew, Conda, and system Python locations, but those
+interpreters usually lack the required modules — do not rely on
+auto-detection. The `python-path` configuration file takes precedence and
+must contain the absolute path to the Python executable.
 
-### Build and install
+#### Step 2: install the app and register the extension
 
 ```bash
-./build.sh
 pluginkit -r "/Applications/DTA Parquet Quick Look.app/Contents/PlugIns/DTA Parquet Preview.appex" 2>/dev/null || true
 rm -rf "/Applications/DTA Parquet Quick Look.app"
 ditto "build/DTA Parquet Quick Look.app" "/Applications/DTA Parquet Quick Look.app"
@@ -173,6 +239,12 @@ pluginkit -a "/Applications/DTA Parquet Quick Look.app/Contents/PlugIns/DTA Parq
 qlmanage -r cache
 qlmanage -r
 ```
+
+When installing a downloaded release, replace the `ditto` source path
+`build/DTA Parquet Quick Look.app` with the path of the unpacked app; the
+other commands stay the same.
+
+#### Step 3: enable the extension
 
 If Finder has not enabled the extension, enable DTA Parquet Preview in
 System Settings → General → Login Items & Extensions → Quick Look. Close and
