@@ -398,7 +398,7 @@ def render_html_table(
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <style>
-:root { color-scheme: light dark; --sel: rgba(127,127,127,.12); --sel: color-mix(in srgb, CanvasText 12%, transparent); --sel-hover: rgba(127,127,127,.07); --sel-hover: color-mix(in srgb, CanvasText 7%, transparent); }
+:root { color-scheme: light dark; --sel-hover: rgba(127,127,127,.07); --sel-hover: color-mix(in srgb, CanvasText 7%, transparent); }
 * { box-sizing: border-box; }
 html, body { margin: 0; height: 100%; overflow: hidden; background: Canvas; color: CanvasText; }
 body { display: flex; flex-direction: column; font-family: -apple-system, BlinkMacSystemFont, sans-serif; }
@@ -428,8 +428,8 @@ body { display: flex; flex-direction: column; font-family: -apple-system, BlinkM
 .stat-freq-row .fv { word-break: break-all; }
 .stat-freq-row .fc { color: rgba(127,127,127,.7); color: color-mix(in srgb, CanvasText 58%, transparent); font-variant-numeric: tabular-nums; }
 thead th.col-head { cursor: pointer; }
-thead th.col-head:hover { background: var(--sel-hover); }
-th.col-head.selected { background: var(--sel); box-shadow: inset 0 -2px 0 CanvasText; }
+thead th.col-head:hover { background: Canvas; background: color-mix(in srgb, Canvas 90%, CanvasText 10%); }
+th.col-head.selected { background: Canvas; background: color-mix(in srgb, Canvas 86%, CanvasText 14%); box-shadow: inset 0 -2px 0 CanvasText; }
 tbody td.selected { background: var(--sel-hover) !important; }
 table { border-collapse: separate; border-spacing: 0; width: max-content; font: 11.5px/1.3 ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace; }
 th, td { padding: 4px 7px; border-right: 1px solid rgba(127,127,127,.35); border-right: 1px solid color-mix(in srgb, CanvasText 15%, transparent); border-bottom: 1px solid rgba(127,127,127,.35); border-bottom: 1px solid color-mix(in srgb, CanvasText 15%, transparent); white-space: nowrap; vertical-align: middle; }
@@ -450,7 +450,7 @@ tbody tr:nth-child(even) .row-number { background: Canvas; background: color-mix
 .mode-button + .mode-button { border-left: 1px solid rgba(127,127,127,.35); border-left: 1px solid color-mix(in srgb, CanvasText 15%, transparent); }
 #rows-first:checked ~ .summary .mode-button[for="rows-first"] { color: Canvas; background: CanvasText; }
 #rows-extended:checked ~ .summary .mode-button[for="rows-extended"] { color: Canvas; background: CanvasText; }
-#rows-first:checked ~ .table-wrap tbody tr:nth-child(n+51) { display: none; }
+#rows-first:checked ~ .main .table-wrap tbody tr:nth-child(n+51) { display: none; }
 </style>
 </head>
 <body>""")
