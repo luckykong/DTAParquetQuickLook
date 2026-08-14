@@ -3,12 +3,14 @@
 
 from __future__ import annotations
 
+import json
 import math
 import os
 import re
 import struct
 import sys
 import unicodedata
+from collections import Counter
 from datetime import date, datetime
 from html import escape as escape_html
 from numbers import Number
@@ -173,6 +175,76 @@ def read_dta_header(path: Path) -> tuple[int, int]:
         return version, nobs
 
 
+def _is_missing_value(value: Any) -> bool:
+    """True for None, NaN, and other "not equal to itself" sentinels."""
+    if value is None:
+        return True
+    try:
+        return bool(value != value)
+    except (TypeError, ValueError):
+        return False
+
+
+def compute_column_stats(
+    columns: list[str],
+    types: list[str],
+    preview_rows: int,
+    value_at: Callable[[int, int], Any],
+    variable_labels: dict[str, str],
+) -> list[dict[str, Any]]:
+    """Per-column summary stats over the loaded preview rows.
+
+    Bounded by the preview rows already in memory (<= EXTENDED_ROWS), so this
+    never scans the full file. Returns a JSON-serializable list of dicts.
+    """
+    stats: list[dict[str, Any]] = []
+    for column_index, name in enumerate(columns):
+        values = [value_at(row, column_index) for row in range(preview_rows)]
+
+        missing = sum(1 for value in values if _is_missing_value(value))
+        missing_rate = f"{missing / preview_rows * 100:.1f}%" if preview_rows else "0.0%"
+
+        formatted = [format_value(value) for value in values]
+        non_missing = [
+            text for value, text in zip(values, formatted)
+            if not _is_missing_value(value)
+        ]
+        unique = len(set(non_missing))
+
+        numbers = [
+            value for value in values
+            if not _is_missing_value(value)
+            and isinstance(value, Number)
+            and not isinstance(value, bool)
+        ]
+        if numbers:
+            try:
+                min_val: Any = min(numbers)
+                max_val: Any = max(numbers)
+                mean_val: Any = sum(numbers) / len(numbers)
+            except TypeError:
+                min_val = max_val = mean_val = None
+        else:
+            min_val = max_val = mean_val = None
+
+        counter = Counter(formatted)
+        freq = [{"value": text, "count": count} for text, count in counter.most_common(5)]
+
+        stats.append({
+            "name": name,
+            "type": types[column_index],
+            "label": variable_labels.get(name, "") if variable_labels else "",
+            "missing": missing,
+            "missing_rate": missing_rate,
+            "unique": unique,
+            "min": format_value(min_val) if min_val is not None else None,
+            "max": format_value(max_val) if max_val is not None else None,
+            "mean": format_value(mean_val) if mean_val is not None else None,
+            "freq": freq,
+        })
+    return stats
+
+
 def render_table(
     path: Path,
     format_name: str,
@@ -310,13 +382,23 @@ def render_html_table(
             is_numeric = is_numeric and (value is None or isinstance(value, Number))
         numeric.append(is_numeric)
 
+    column_stats = compute_column_stats(
+        columns, types, preview_rows, value_at,
+        variable_labels if SHOW_METADATA else {},
+    )
+    stats_json = json.dumps(column_stats, ensure_ascii=False).replace("<", "\\u003c")
+    meta_json = json.dumps(
+        {"rows": preview_rows, "all_rows": bool(all_rows_available), "total_rows": total_rows},
+        ensure_ascii=False,
+    ).replace("<", "\\u003c")
+
     print("""<!doctype html>
 <html>
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <style>
-:root { color-scheme: light dark; }
+:root { color-scheme: light dark; --sel: rgba(127,127,127,.12); --sel: color-mix(in srgb, CanvasText 12%, transparent); --sel-hover: rgba(127,127,127,.07); --sel-hover: color-mix(in srgb, CanvasText 7%, transparent); }
 * { box-sizing: border-box; }
 html, body { margin: 0; height: 100%; overflow: hidden; background: Canvas; color: CanvasText; }
 body { display: flex; flex-direction: column; font-family: -apple-system, BlinkMacSystemFont, sans-serif; }
@@ -329,7 +411,26 @@ body { display: flex; flex-direction: column; font-family: -apple-system, BlinkM
 .vl-row { display: flex; gap: 8px; padding: 1px 0; }
 .vl-row code { font-weight: 650; }
 .vl-map { color: rgba(127,127,127,.7); color: color-mix(in srgb, CanvasText 58%, transparent); }
-.table-wrap { flex: 1; width: 100%; overflow: auto; }
+.main { flex: 1; display: flex; min-height: 0; }
+.table-wrap { flex: 1; min-width: 0; overflow: auto; }
+.stat-panel { flex: none; width: 260px; overflow-y: auto; border-left: 1px solid rgba(127,127,127,.35); border-left: 1px solid color-mix(in srgb, CanvasText 15%, transparent); padding: 12px 14px; font-size: 11px; background: Canvas; }
+.stat-placeholder { color: rgba(127,127,127,.7); color: color-mix(in srgb, CanvasText 58%, transparent); }
+.stat-scope { color: rgba(127,127,127,.7); color: color-mix(in srgb, CanvasText 58%, transparent); font-size: 10px; margin-bottom: 6px; }
+.stat-name { font-weight: 700; font-size: 13px; word-break: break-all; }
+.stat-type { color: rgba(127,127,127,.7); color: color-mix(in srgb, CanvasText 58%, transparent); font-size: 9px; margin: 2px 0 4px; }
+.stat-label { font-style: italic; color: rgba(127,127,127,.7); color: color-mix(in srgb, CanvasText 58%, transparent); margin-bottom: 8px; word-break: break-all; }
+.stat-grid { margin-top: 8px; }
+.stat-row { display: flex; justify-content: space-between; gap: 8px; padding: 3px 0; border-bottom: 1px solid rgba(127,127,127,.15); border-bottom: 1px solid color-mix(in srgb, CanvasText 8%, transparent); }
+.stat-row .sl { color: rgba(127,127,127,.7); color: color-mix(in srgb, CanvasText 58%, transparent); }
+.stat-row .sv { font-variant-numeric: tabular-nums; text-align: right; word-break: break-all; }
+.stat-freq-title { margin: 10px 0 4px; color: rgba(127,127,127,.7); color: color-mix(in srgb, CanvasText 58%, transparent); font-size: 10px; }
+.stat-freq-row { display: flex; justify-content: space-between; gap: 8px; padding: 1px 0; }
+.stat-freq-row .fv { word-break: break-all; }
+.stat-freq-row .fc { color: rgba(127,127,127,.7); color: color-mix(in srgb, CanvasText 58%, transparent); font-variant-numeric: tabular-nums; }
+thead th.col-head { cursor: pointer; }
+thead th.col-head:hover { background: var(--sel-hover); }
+th.col-head.selected { background: var(--sel); box-shadow: inset 0 -2px 0 CanvasText; }
+tbody td.selected { background: var(--sel-hover) !important; }
 table { border-collapse: separate; border-spacing: 0; width: max-content; font: 11.5px/1.3 ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace; }
 th, td { padding: 4px 7px; border-right: 1px solid rgba(127,127,127,.35); border-right: 1px solid color-mix(in srgb, CanvasText 15%, transparent); border-bottom: 1px solid rgba(127,127,127,.35); border-bottom: 1px solid color-mix(in srgb, CanvasText 15%, transparent); white-space: nowrap; vertical-align: middle; }
 thead th { position: sticky; top: 0; z-index: 2; text-align: left; background: Canvas; background: color-mix(in srgb, Canvas 96%, CanvasText 4%); box-shadow: 0 1px 0 rgba(127,127,127,.35); box-shadow: 0 1px 0 color-mix(in srgb, CanvasText 15%, transparent); }
@@ -408,9 +509,9 @@ tbody tr:nth-child(even) .row-number { background: Canvas; background: color-mix
         print('<div class="table-wrap"><p>&lt;no variables&gt;</p></div></body></html>')
         return
 
-    print('<div class="table-wrap"><table><thead><tr>')
+    print('<div class="main"><div class="table-wrap"><table><thead><tr>')
     print('<th class="row-number">#</th>')
-    for column, type_name in zip(columns, types):
+    for column_index, (column, type_name) in enumerate(zip(columns, types)):
         label = variable_labels.get(column, "") if SHOW_METADATA else ""
         label_html = ""
         if label:
@@ -419,7 +520,7 @@ tbody tr:nth-child(even) .row-number { background: Canvas; background: color-mix
                 f'{escape_html(clip(label, MAX_HTML_CELL_WIDTH))}</span>'
             )
         print(
-            '<th><span class="name">'
+            f'<th class="col-head" data-col="{column_index}"><span class="name">'
             + escape_html(column)
             + '</span><span class="type">'
             + escape_html(type_name)
@@ -448,7 +549,86 @@ tbody tr:nth-child(even) .row-number { background: Canvas; background: color-mix
                 + '</span></td>'
             )
         print('</tr>')
-    print('</tbody></table></div></body></html>')
+    print('</tbody></table></div>')
+    print('<aside class="stat-panel" id="stat-panel"><div class="stat-placeholder">点击列名查看该列的统计</div></aside>')
+    print('</div>')
+    print('<script>')
+    print('window.COLUMN_STATS = ' + stats_json + ';')
+    print('window.PREVIEW_META = ' + meta_json + ';')
+    print("""(function() {
+  var panel = document.getElementById('stat-panel');
+  var table = document.querySelector('table');
+  var selected = null;
+  function esc(s) {
+    return String(s).replace(/[&<>"']/g, function(c) {
+      return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c];
+    });
+  }
+  function renderPlaceholder() {
+    panel.innerHTML = '<div class="stat-placeholder">点击列名查看该列的统计</div>';
+  }
+  function renderStats(colIdx) {
+    var st = window.COLUMN_STATS[colIdx];
+    if (!st) return;
+    var meta = window.PREVIEW_META || {};
+    var scope = meta.all_rows ? ('全表 ' + meta.rows + ' 行') : ('前 ' + meta.rows + ' 行');
+    var h = '';
+    h += '<div class="stat-scope">统计范围：' + esc(scope) + '</div>';
+    h += '<div class="stat-name">' + esc(st.name) + '</div>';
+    h += '<div class="stat-type">' + esc(st.type) + '</div>';
+    if (st.label) h += '<div class="stat-label">' + esc(st.label) + '</div>';
+    h += '<div class="stat-grid">';
+    h += '<div class="stat-row"><span class="sl">缺失</span><span class="sv">' + st.missing + ' (' + esc(st.missing_rate) + ')</span></div>';
+    h += '<div class="stat-row"><span class="sl">唯一值</span><span class="sv">' + st.unique + '</span></div>';
+    if (st.min !== null && st.min !== undefined) h += '<div class="stat-row"><span class="sl">最小值</span><span class="sv">' + esc(st.min) + '</span></div>';
+    if (st.max !== null && st.max !== undefined) h += '<div class="stat-row"><span class="sl">最大值</span><span class="sv">' + esc(st.max) + '</span></div>';
+    if (st.mean !== null && st.mean !== undefined) h += '<div class="stat-row"><span class="sl">均值</span><span class="sv">' + esc(st.mean) + '</span></div>';
+    h += '</div>';
+    if (st.freq && st.freq.length) {
+      h += '<div class="stat-freq-title">取值分布（Top ' + st.freq.length + '）</div>';
+      for (var i = 0; i < st.freq.length; i++) {
+        h += '<div class="stat-freq-row"><span class="fv">' + esc(st.freq[i].value) + '</span><span class="fc">' + st.freq[i].count + '</span></div>';
+      }
+    }
+    panel.innerHTML = h;
+  }
+  function clearHighlight() {
+    var prev = table.querySelectorAll('.selected');
+    for (var i = 0; i < prev.length; i++) prev[i].classList.remove('selected');
+  }
+  function highlight(colIdx) {
+    clearHighlight();
+    var heads = table.querySelectorAll('thead th.col-head');
+    for (var i = 0; i < heads.length; i++) {
+      if (parseInt(heads[i].getAttribute('data-col'), 10) === colIdx) heads[i].classList.add('selected');
+    }
+    var rows = table.querySelectorAll('tbody tr');
+    for (var r = 0; r < rows.length; r++) {
+      var cells = rows[r].children;
+      if (colIdx + 1 < cells.length) cells[colIdx + 1].classList.add('selected');
+    }
+  }
+  var heads = table.querySelectorAll('thead th.col-head');
+  for (var i = 0; i < heads.length; i++) {
+    (function(th) {
+      th.addEventListener('click', function() {
+        var colIdx = parseInt(th.getAttribute('data-col'), 10);
+        if (selected === colIdx) {
+          selected = null;
+          clearHighlight();
+          renderPlaceholder();
+        } else {
+          selected = colIdx;
+          highlight(colIdx);
+          renderStats(colIdx);
+        }
+      });
+    })(heads[i]);
+  }
+})();
+""")
+    print('</script>')
+    print('</body></html>')
 
 
 def preview_dta(path: Path) -> None:

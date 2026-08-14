@@ -278,3 +278,54 @@ def test_preview_parquet_html_omits_internal_metadata(tmp_path, capsys, monkeypa
     # pyarrow/pandas write internal blobs; these must not be shown as metadata.
     assert "ARROW:schema" not in out
     assert "pandas" not in out
+
+
+# ---------------------------------------------------------------------------
+# Per-column statistics (right-hand panel)
+# ---------------------------------------------------------------------------
+
+
+def test_compute_column_stats_numeric_and_categorical():
+    columns = ["a", "b"]
+    types = ["float64", "object"]
+    values = {
+        (0, 0): 1.0, (1, 0): 2.0, (2, 0): 3.0, (3, 0): None,
+        (0, 1): "x", (1, 1): "x", (2, 1): "y", (3, 1): "x",
+    }
+
+    def value_at(row, col):
+        return values[(row, col)]
+
+    stats = dp.compute_column_stats(columns, types, 4, value_at, {"a": "数字列"})
+
+    # numeric column
+    assert stats[0]["label"] == "数字列"
+    assert stats[0]["missing"] == 1
+    assert stats[0]["missing_rate"] == "25.0%"
+    assert stats[0]["unique"] == 3
+    assert stats[0]["min"] == "1"
+    assert stats[0]["max"] == "3"
+    assert stats[0]["mean"] == "2"
+
+    # categorical column
+    assert stats[1]["unique"] == 2
+    assert stats[1]["freq"][0] == {"value": "x", "count": 3}
+    assert stats[1]["freq"][1] == {"value": "y", "count": 1}
+    assert stats[1]["min"] is None  # non-numeric has no min/max/mean
+
+
+def test_compute_column_stats_all_missing():
+    columns = ["a"]
+    types = ["float64"]
+    values = {(0, 0): np.nan, (1, 0): np.nan, (2, 0): np.nan}
+
+    def value_at(row, col):
+        return values[(row, col)]
+
+    stats = dp.compute_column_stats(columns, types, 3, value_at, {})
+    assert stats[0]["missing"] == 3
+    assert stats[0]["missing_rate"] == "100.0%"
+    assert stats[0]["unique"] == 0
+    assert stats[0]["min"] is None
+    assert stats[0]["mean"] is None
+    assert stats[0]["freq"] == [{"value": "<missing>", "count": 3}]
