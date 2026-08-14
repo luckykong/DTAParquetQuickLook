@@ -267,3 +267,14 @@ def test_preview_boolean_column_is_numeric(tmp_path, capsys, monkeypatch):
     out = capsys.readouterr().out
     # The boolean column should be marked numeric (right-aligned).
     assert "numeric" in out
+
+
+def test_preview_parquet_html_omits_internal_metadata(tmp_path, capsys, monkeypatch):
+    path = tmp_path / "test.parquet"
+    pd.DataFrame({"a": [1.0, 2.0, 3.0]}).to_parquet(str(path))
+    monkeypatch.setattr(dp, "OUTPUT_HTML", True)
+    dp.preview_parquet(path)
+    out = capsys.readouterr().out
+    # pyarrow/pandas write internal blobs; these must not be shown as metadata.
+    assert "ARROW:schema" not in out
+    assert "pandas" not in out

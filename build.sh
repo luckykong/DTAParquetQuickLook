@@ -9,7 +9,7 @@ xpc_dir="$extension_dir/Contents/XPCServices/DTA Parquet Render.xpc"
 module_cache="$build_dir/ModuleCache"
 
 rm -rf "$build_dir"
-mkdir -p "$app_dir/Contents/MacOS" "$app_dir/Contents/PlugIns"
+mkdir -p "$app_dir/Contents/MacOS" "$app_dir/Contents/PlugIns" "$app_dir/Contents/Resources"
 mkdir -p "$extension_dir/Contents/MacOS" "$extension_dir/Contents/Resources"
 mkdir -p "$xpc_dir/Contents/MacOS" "$xpc_dir/Contents/Resources"
 mkdir -p "$module_cache"
@@ -19,6 +19,8 @@ cp "$project_dir/Extension/Info.plist" "$extension_dir/Contents/Info.plist"
 cp "$project_dir/RenderService/Info.plist" "$xpc_dir/Contents/Info.plist"
 cp "$project_dir/Resources/data_preview.py" \
   "$xpc_dir/Contents/Resources/data_preview.py"
+cp "$project_dir/Resources/AppIcon.icns" \
+  "$app_dir/Contents/Resources/AppIcon.icns"
 
 /usr/bin/clang \
   "$project_dir/Host/main.m" \

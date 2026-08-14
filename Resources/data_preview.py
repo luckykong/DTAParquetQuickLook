@@ -549,7 +549,8 @@ def preview_parquet(path: Path) -> None:
     raw_metadata = parquet.metadata.metadata
     if raw_metadata:
         for key, value in raw_metadata.items():
-            if key == b"pandas":
+            # Skip pyarrow/pandas internal blobs (base64 Arrow schema / pandas JSON).
+            if key in (b"pandas", b"ARROW:schema"):
                 continue
             try:
                 key_str = key.decode("utf-8") if isinstance(key, bytes) else str(key)
