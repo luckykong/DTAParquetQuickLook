@@ -1,0 +1,45 @@
+name: Release
+
+# Build, package, and publish a GitHub Release whenever a version tag (v*) is
+# pushed. No local build or manual upload is needed:
+#   git tag v0.4.0 && git push origin v0.4.0
+on:
+  push:
+    tags:
+      - 'v*'
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@v5
+
+      - name: Sync version from tag
+        run: |
+          VERSION="${GITHUB_REF_NAME#v}"
+          for f in Host/Info.plist Extension/Info.plist RenderService/Info.plist; do
+            sed -i '' "s|<key>CFBundleShortVersionString</key><string>[^<]*</string>|<key>CFBundleShortVersionString</key><string>${VERSION}</string>|" "$f"
+          done
+          grep -h "CFBundleShortVersionString" Host/Info.plist | head -1
+
+      - name: Build and sign
+        run: ./build.sh
+
+      - name: Package
+        run: |
+          cd build
+          ditto -c -k --keepParent "DTA Parquet Quick Look.app" "DTA Parquet Quick Look.app.zip"
+          shasum -a 256 "DTA Parquet Quick Look.app.zip" | tee SHA256.txt
+
+      - name: Create GitHub Release
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          gh release create "$GITHUB_REF_NAME" \
+            "build/DTA Parquet Quick Look.app.zip" \
+            "build/SHA256.txt" \
+            --title "$GITHUB_REF_NAME" \
+            --generate-notes
