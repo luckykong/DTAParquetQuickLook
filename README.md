@@ -13,19 +13,21 @@ Apache Parquet `.parquet` 文件并按空格，即可用对齐的表格快速查
 - 显示变量名、数据类型、文件大小、总行数和变量数。
 - 默认显示 Stata 元数据：变量标签（variable labels）、值标签
   （value labels）、数据标签（data label）与时间戳；可通过配置关闭。
+- 点击列名可在右侧面板查看该列统计：缺失数/率、唯一值数、数值列的
+  min/max/mean、取值频率 Top-5（统计基于预览行，不读取全表）。
 - 支持中文、英文、数字、空字符串和缺失值。
 - 表头和行号固定，支持横向及纵向滚动。
 - 不超过 2,000 行且不超过 100,000 个单元格时，提供
   `First 50 / All N` 切换。
 - 更大的数据集只读取前 500 行，提供 `First 50 / First 500` 切换，
   不会读取完整数据文件。
-- 使用纯 HTML/CSS 表格：行数切换用 radio + `:checked`，元数据折叠用
-  `<details>`，均不执行页面 JavaScript。
+- 行数切换用纯 CSS（radio + `:checked`），元数据折叠用 `<details>`；
+  统计面板使用轻量 JavaScript（数据在 Python 端转义后注入）。
 
 ### 系统与依赖
 
 - macOS 12 或更高版本。
-- Python 3，以及 `pandas`（>=2.0）、`pyarrow`（>=10）（配置方法见下文
+- Python 3，以及 `pandas`（>=2.2）、`pyarrow`（>=10）（配置方法见下文
   “安装”第 1 步；也可用仓库根目录的 `requirements.txt` 安装）。
 - 仅从源码构建时需要 Apple Command Line Tools：`xcode-select --install`。
   不需要安装完整 Xcode。
@@ -54,6 +56,17 @@ Apache Parquet `.parquet` 文件并按空格，即可用对齐的表格快速查
 ```
 
 构建产物位于 `build/DTA Parquet Quick Look.app`。
+
+**发布（维护者）**
+
+向 `main` 推送一个版本 tag（`v*`）即可自动构建并发布 GitHub Release：
+
+```bash
+git tag v0.4.0 && git push origin v0.4.0
+```
+
+GitHub Actions 会自动从 tag 名同步版本号、编译签名、打包 zip（含 SHA-256
+校验值）并创建 Release，无需本地构建上传。
 
 ### 安装
 
@@ -185,19 +198,23 @@ structure in an aligned table.
 - Shows variable names, data types, file size, row count, and variable count.
 - Shows Stata metadata by default: variable labels, value labels, data label,
   and timestamp; can be disabled via configuration.
+- Click a column name to see its stats in a right-hand panel: missing
+  count/rate, number of unique values, min/max/mean for numeric columns, and
+  top-5 value frequencies (computed over the preview rows, never the full file).
 - Handles Chinese and English text, numbers, empty strings, and missing values.
 - Keeps headers and row numbers visible while scrolling.
 - For datasets with at most 2,000 rows and 100,000 cells, offers a
   `First 50 / All N` switch.
 - For larger datasets, reads at most the first 500 rows and offers a
   `First 50 / First 500` switch instead of loading the complete file.
-- Uses a real HTML/CSS table: the row-count switch uses radio + `:checked` and
-  metadata folds with `<details>`, none of which execute page JavaScript.
+- The row-count switch is pure CSS (radio + `:checked`) and metadata folds use
+  `<details>`; the stats panel uses lightweight JavaScript (data is escaped on
+  the Python side before injection).
 
 ### Requirements
 
 - macOS 12 or later.
-- Python 3 with `pandas` (>=2.0) and `pyarrow` (>=10) — configured in Step 1
+- Python 3 with `pandas` (>=2.2) and `pyarrow` (>=10) — configured in Step 1
   of Install below; see `requirements.txt` in the repository root.
 - Apple Command Line Tools (`xcode-select --install`) — only needed when
   building from source. Full Xcode is not required.
@@ -227,6 +244,18 @@ No build step is needed; continue with Install below.
 ```
 
 The built app is placed at `build/DTA Parquet Quick Look.app`.
+
+**Publishing (maintainers)**
+
+Push a version tag (`v*`) to `main` to build and publish a GitHub Release
+automatically:
+
+```bash
+git tag v0.4.0 && git push origin v0.4.0
+```
+
+GitHub Actions syncs the version from the tag, builds and signs, packages a zip
+with a SHA-256 checksum, and creates the Release — no local build or upload.
 
 ### Install
 
