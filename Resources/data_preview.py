@@ -647,8 +647,6 @@ def preview_dta(path: Path) -> None:
         convert_dates=True,
         preserve_dtypes=True,
     ) as reader:
-        variable_labels = reader.variable_labels()
-        value_labels = reader.value_labels()
         data_label = reader.data_label or ""
         time_stamp = reader.time_stamp or ""
 
@@ -658,6 +656,12 @@ def preview_dta(path: Path) -> None:
             convert_dates=True,
             preserve_dtypes=True,
         )
+
+        # Read metadata AFTER the first data read: calling value_labels() sets
+        # pandas' internal _value_labels_read flag, which would otherwise skip
+        # strL decoding and leave strL columns as raw uint64 offsets.
+        variable_labels = reader.variable_labels()
+        value_labels = reader.value_labels()
 
         # Fall back to pandas' private attributes if our header parse failed.
         if total_rows is None:

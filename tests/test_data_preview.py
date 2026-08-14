@@ -329,3 +329,27 @@ def test_compute_column_stats_all_missing():
     assert stats[0]["min"] is None
     assert stats[0]["mean"] is None
     assert stats[0]["freq"] == [{"value": "<missing>", "count": 3}]
+
+
+# ---------------------------------------------------------------------------
+# strL (long string) columns decode to text, not uint64 offsets
+# ---------------------------------------------------------------------------
+
+
+def test_preview_dta_strl_column_is_text(tmp_path, capsys):
+    path = tmp_path / "strl.dta"
+    long_text = "超长文本" * 1000  # >2045 chars -> strL
+    df = pd.DataFrame({"sex": [1.0, 2.0], "long_text": [long_text, "短"]})
+    # Include a value label to reproduce the ordering that broke strL: the
+    # metadata is read after the data, but an earlier version read value_labels
+    # first, which skipped strL decoding.
+    df.to_stata(
+        str(path),
+        write_index=False,
+        version=118,
+        value_labels={"sex": {1.0: "男", 2.0: "女"}},
+    )
+    dp.preview_dta(path)
+    out = capsys.readouterr().out
+    assert "超长文本" in out  # decoded text, not a uint64 offset
+    assert "短" in out
