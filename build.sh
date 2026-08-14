@@ -24,9 +24,10 @@ cp "$project_dir/Resources/data_preview.py" \
   "$project_dir/Host/main.m" \
   -o "$app_dir/Contents/MacOS/DTAParquetQuickLook" \
   -fobjc-arc \
+  -fblocks \
   -fmodules-cache-path="$module_cache" \
   -mmacosx-version-min=12.0 \
-  -framework Foundation
+  -framework Cocoa
 
 /usr/bin/clang \
   "$project_dir/Extension/PreviewProvider.m" \
@@ -48,7 +49,8 @@ cp "$project_dir/Resources/data_preview.py" \
   -fblocks \
   -fmodules-cache-path="$module_cache" \
   -mmacosx-version-min=12.0 \
-  -framework Foundation
+  -framework Foundation \
+  -framework Security
 
 /usr/bin/codesign --force --sign - "$xpc_dir"
 /usr/bin/codesign --force --sign - \

@@ -76,8 +76,10 @@ API_AVAILABLE(macos(12.0)) {
          "html,body{margin:0;min-height:100%%}body{padding:18px 20px 28px;"
          "background:Canvas;color:CanvasText;font-family:ui-monospace,SFMono-Regular,"
          "Menlo,Monaco,Consolas,monospace}.title{position:sticky;top:0;z-index:1;"
-         "margin:-18px -20px 14px;padding:12px 20px;border-bottom:1px solid "
-         "color-mix(in srgb,CanvasText 18%%,transparent);background:color-mix(in srgb,"
+         "margin:-18px -20px 14px;padding:12px 20px;"
+         "border-bottom:1px solid rgba(127,127,127,.35);"
+         "border-bottom:1px solid color-mix(in srgb,CanvasText 18%%,transparent);"
+         "background:Canvas;background:color-mix(in srgb,"
          "Canvas 94%%,transparent);backdrop-filter:blur(12px);font:600 13px "
          "-apple-system,BlinkMacSystemFont,sans-serif}pre{margin:0;width:max-content;"
          "min-width:100%%;font-size:12px;line-height:1.55;tab-size:4;white-space:pre}"
@@ -90,7 +92,9 @@ API_AVAILABLE(macos(12.0)) {
     NSString *result = [value stringByReplacingOccurrencesOfString:@"&" withString:@"&amp;"];
     result = [result stringByReplacingOccurrencesOfString:@"<" withString:@"&lt;"];
     result = [result stringByReplacingOccurrencesOfString:@">" withString:@"&gt;"];
-    return [result stringByReplacingOccurrencesOfString:@"\"" withString:@"&quot;"];
+    result = [result stringByReplacingOccurrencesOfString:@"\"" withString:@"&quot;"];
+    result = [result stringByReplacingOccurrencesOfString:@"'" withString:@"&#39;"];
+    return result;
 }
 
 @end

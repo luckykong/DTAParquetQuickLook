@@ -1,0 +1,8 @@
+# Runtime dependencies for the preview helper (Resources/data_preview.py).
+# Install these into the Python environment whose interpreter path is written
+# to ~/Library/Application Support/DTA Parquet Quick Look/python-path.
+#
+# pandas>=2.0 is required for StataReader.read(preserve_dtypes=...).
+# pyarrow>=10 is required for ParquetFile.iter_batches(use_pandas_metadata=...).
+pandas>=2.0
+pyarrow>=10
