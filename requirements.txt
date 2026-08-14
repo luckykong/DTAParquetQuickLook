@@ -2,7 +2,8 @@
 # Install these into the Python environment whose interpreter path is written
 # to ~/Library/Application Support/DTA Parquet Quick Look/python-path.
 #
-# pandas>=2.0 is required for StataReader.read(preserve_dtypes=...).
+# pandas>=2.2 is required: preserve_dtypes (added in 2.0) is used, and 2.2 is
+# the first release line that works with numpy 2.x (which pyarrow pulls in).
 # pyarrow>=10 is required for ParquetFile.iter_batches(use_pandas_metadata=...).
-pandas>=2.0
+pandas>=2.2
 pyarrow>=10
